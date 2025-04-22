@@ -1,26 +1,22 @@
 import os
 import time
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 from llama_cpp import Llama
 
 app = Flask(__name__)
 
 MODEL_PATH = "./models/Nous-Hermes-2-Mistral-7B-DPO.Q4_K_M.gguf"
 
-n_threads = os.getenv('N_THREADS', 4)
+n_threads = int(os.getenv('N_THREADS', 4))
 llm = Llama(
     model_path=MODEL_PATH,
     n_ctx=2048,
     n_batch=512,
-    n_threads=6,
+    n_threads=n_threads,
     n_gpu_layers=-1,
     verbose=True
 )
-@app.route("/")
-def index():
-    return render_template("index.html")
-
 @app.route("/chat", methods=["POST"])
 def chat():
     start = time.time()
@@ -34,7 +30,7 @@ def chat():
 
     output = llm(
         prompt,
-        max_tokens=200,
+        max_tokens=1000,
         temperature=0.7,
         top_p=0.9,
         stop=["<|user|>", "<|system|>", "<|end|>"]

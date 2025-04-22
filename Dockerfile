@@ -8,8 +8,6 @@ FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS app
 ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 WORKDIR /app
 RUN apt update && apt install -y libgomp1 python3
-COPY templates templates
-COPY static static
 COPY app.py app.py
 COPY --from=builder /root/.local /root/.local
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
