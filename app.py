@@ -1,7 +1,8 @@
+# ./app.py
 import os
 import time
 
-from flask import Flask, request, jsonify
+from flask import Flask, Response, request, jsonify
 from llama_cpp import Llama
 
 app = Flask(__name__)
@@ -17,29 +18,35 @@ llm = Llama(
     n_gpu_layers=-1,
     verbose=True
 )
+
 @app.route("/chat", methods=["POST"])
 def chat():
-    start = time.time()
     user_input = request.json["message"]
 
     prompt = f"""
-<|system|>Você é um assistente útil que responde sempre em português.<|end|>
-<|user|>{user_input}<|end|>
-<|assistant|>
+    <|system|>Você é Sofia, uma assistente virtual que responde sempre em português com clareza, empatia e foco técnico.<|end|>
+    <|user|>{user_input}<|end|>
+    <|assistant|>
     """.strip()
 
-    output = llm(
-        prompt,
-        max_tokens=1000,
-        temperature=0.7,
-        top_p=0.9,
-        stop=["<|user|>", "<|system|>", "<|end|>"]
-    )
+    def generate():
+        start = time.time()
+        try:
+            for chunk in llm.create_completion(
+                prompt=prompt,
+                max_tokens=1000,
+                stream=True,
+                temperature=0.8,
+                top_p=0.9,
+                stop=["<|user|>", "<|system|>", "<|end|>"]
+            ):
+                token = chunk["choices"][0]["text"]
+                yield token
+        finally:
+            end = time.time()
+            print(f"⏱️ Tempo de resposta: {end - start:.2f} segundos")
 
-    reply = output['choices'][0]['text'].strip()
-    end = time.time()
-    print(f"Response time: {end - start:.2f} seconds")
-    return jsonify({"reply": reply})
+    return Response(generate(), content_type="text/plain; charset=utf-8")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
