@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: sarta-gpt
+  namespace: sarta-gpt
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: sarta-gpt.tm7cf70.staging.k8s.sp05.te.tks.sh
+    http:
+      paths:
+      - backend:
+          service:
+            name: sarta-gpt
+            port:
+              number: 5000
+        path: /
+        pathType: Prefix
+

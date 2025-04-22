@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sarta-gpt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sarta-gpt
+  template:
+    metadata:
+      labels:
+        app: sarta-gpt
+    spec:
+      initContainers:
+        - name: download-model
+          image: curlimages/curl:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              curl -L -o /app/models/Nous-Hermes-2-Mistral-7B-DPO.Q4_K_M.gguf http://mode-repo/Nous-Hermes-2-Mistral-7B-DPO.Q4_K_M.gguf
+          volumeMounts:
+            - name: model-volume
+              mountPath: /app/models
+      containers:
+        - name: sarta-gpt
+          image: vasartori/sarta-gpt:v1.0.0
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: model-volume
+              mountPath: /app/models
+      volumes:
+        - name: model-volume
+          emptyDir: {}
+
