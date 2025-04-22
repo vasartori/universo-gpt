@@ -3,4 +3,4 @@ accelerate==1.6.0
 llama_cpp_python==0.3.8
 torch==2.6.0
 transformers==4.50.3
-gunicorn==21.2.0
+gunicorn==23.0.0
