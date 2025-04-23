@@ -34,11 +34,11 @@ def chat():
         try:
             for chunk in llm.create_completion(
                 prompt=prompt,
-                max_tokens=1000,
+                max_tokens=2048,
                 stream=True,
                 temperature=0.8,
-                top_p=0.9,
-                stop=["<|user|>", "<|system|>", "<|end|>"]
+                top_p=0.95,
+                stop=["<|user|>", "<|system|>", "<|end|>", "<|assistant|>"]
             ):
                 token = chunk["choices"][0]["text"]
                 yield token
