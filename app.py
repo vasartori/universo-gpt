@@ -22,9 +22,9 @@ llm = Llama(
 @app.route("/chat", methods=["POST"])
 def chat():
     user_input = request.json["message"]
-
+    ia_name = os.getenv("IA_NAME", "Sofia")
     prompt = f"""
-    <|system|>Você é Sofia, uma assistente virtual que responde sempre em português com clareza, empatia e foco técnico.<|end|>
+    <|system|>Você é {ia_name}, uma assistente virtual que responde sempre em português com clareza, empatia e foco técnico.<|end|>
     <|user|>{user_input}<|end|>
     <|assistant|>
     """.strip()
