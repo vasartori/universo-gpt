@@ -3,6 +3,7 @@ import os
 import streamlit as st
 import requests
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -24,10 +25,20 @@ st.markdown("""
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# Função segura para exibir mensagens com ou sem markdown formatado
+
+def render_markdown_seguro(texto):
+    blocos = re.split(r"(```[\s\S]*?```)", texto)
+    for bloco in blocos:
+        if bloco.startswith("```"):
+            st.code(bloco.strip("`\n"), language="markdown")
+        else:
+            st.markdown(bloco)
+
 # Renderiza histórico
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        render_markdown_seguro(msg["content"])
 
 # Entrada do usuário
 user_input = st.chat_input("Digite sua pergunta...")
@@ -50,7 +61,8 @@ if user_input:
             for chunk in response.iter_content(chunk_size=1, decode_unicode=True):
                 if chunk:
                     assistant_reply += chunk
-                    placeholder.markdown(assistant_reply)
+                    with placeholder.container():
+                        render_markdown_seguro(assistant_reply)
         except Exception as e:
             assistant_reply = f"Erro ao gerar resposta: {e}"
             placeholder.error(assistant_reply)
