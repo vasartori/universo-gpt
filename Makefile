@@ -16,7 +16,7 @@ setup:
 
 run:
 	@echo "🧠 Executando modelo localmente com ambiente limpo..."
-	gunicorn app:app --bind 0.0.0.0:5000 --worker-class gevent --timeout 300
+	gunicorn app:app --bind 0.0.0.0:5000 --worker-class gevent --timeout 600
 
 clean:
 	@echo "🧹 Removendo ambiente virtual..."
