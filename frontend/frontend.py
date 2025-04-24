@@ -1,152 +1,77 @@
-# ./frontend/frontend.py
+# frontend/frontend.py
 import os
 import streamlit as st
 import requests
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
-st.set_page_config(page_title="Sofia IA", layout="centered")
+st.set_page_config(page_title="Assistente IA", layout="centered")
 
 CHAT_API_URL = os.getenv("CHAT_API_URL", "localhost")
 CHAT_API_PORT = os.getenv("CHAT_API_PORT", "5000")
 
+# Título
 st.markdown("""
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-p..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-""", unsafe_allow_html=True)
-
-st.markdown("""
-    <style>
-        .title-container {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .chat-box {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            border: 1px solid #e6e6e6;
-            max-width: 700px;
-            margin: auto;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-        .message.user {
-            background-color: #eef2ff;
-            color: #1e40af;
-            align-self: flex-end;
-        }
-        .message.bot {
-            background-color: #ecfdf5;
-            color: #064e3b;
-            align-self: flex-start;
-        }
-        .message {
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.5rem;
-            max-width: 85%;
-            white-space: pre-wrap;
-        }
-        .message i {
-            margin-right: 0.5rem;
-            font-size: 1rem;
-        }
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            height: 60vh;
-            overflow-y: auto;
-            padding: 0.5rem;
-        }
-        .footer {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #888888;
-            margin-top: 2rem;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="title-container">
-    <h1>🤖 Sofia IA</h1>
-    <p>Assistente virtual com inteligência artificial — pronta para ajudar.</p>
+<div style='text-align: center; font-size: 36px; font-weight: bold;'>
+    🤖 Assistente IA
 </div>
+<p style='text-align: center; font-size: 16px;'>Converse com uma IA conectada ao seu próprio backend</p>
+<hr>
 """, unsafe_allow_html=True)
 
-# Estados da sessão
-if "user_input_temp" not in st.session_state:
-    st.session_state.user_input_temp = ""
+# Inicializa estado da sessão
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "input_text" not in st.session_state:
-    st.session_state.input_text = ""
-if "submit" not in st.session_state:
-    st.session_state.submit = False
 
-def render_chat(messages):
-    html = '<div class="chat-container">'
-    for msg in messages:
-        role = msg["role"]
-        content = msg.get("streaming", msg["content"])
-        icon = '<i class="fas fa-user"></i>' if role == "user" else '<i class="fas fa-robot"></i>'
-        html += f'<div class="message {role}">{icon} {content}</div>'
-    html += '</div>'
-    return html
+# Função segura para exibir mensagens com ou sem markdown formatado
 
-chat_area = st.empty()
-chat_area.markdown(render_chat(st.session_state.chat_history), unsafe_allow_html=True)
+def render_markdown_seguro(texto):
+    blocos = re.split(r"(```[\s\S]*?```)", texto)
+    for bloco in blocos:
+        if bloco.startswith("```"):
+            st.code(bloco.strip("`\n"), language="markdown")
+        else:
+            st.markdown(bloco)
 
-# Input
-def handle_submit():
-    st.session_state.submit = True
-    st.session_state.user_input_temp = st.session_state.input_text
-    st.session_state.input_text = ""
+# Renderiza histórico
+for msg in st.session_state.chat_history:
+    with st.chat_message(msg["role"]):
+        render_markdown_seguro(msg["content"])
 
-st.text_input(
-    "Digite sua dúvida...",
-    key="input_text",
-    on_change=handle_submit,
-    placeholder="Pergunte algo para a Sofia...",
-    label_visibility="collapsed"
-)
+# Entrada do usuário
+user_input = st.chat_input("Digite sua pergunta...")
 
-# Envio
-if st.session_state.submit and st.session_state.user_input_temp.strip():
-    user_input = st.session_state.user_input_temp.strip()
-    st.session_state.submit = False
-
+if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
-    chat_area.markdown(render_chat(st.session_state.chat_history), unsafe_allow_html=True)
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-    try:
-        response = requests.post(
-            f"http://{CHAT_API_URL}:{CHAT_API_PORT}/chat",
-            json={"message": user_input},
-            stream=True,
-            timeout=60
-        )
-        bot_msg = ""
-        stream_index = len(st.session_state.chat_history)
-        st.session_state.chat_history.append({"role": "bot", "content": ""})  # placeholder
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        try:
+            response = requests.post(
+                f"http://{CHAT_API_URL}:{CHAT_API_PORT}/chat",
+                json={"message": user_input},
+                stream=True,
+                timeout=60
+            )
+            assistant_reply = ""
+            for chunk in response.iter_content(chunk_size=1, decode_unicode=True):
+                if chunk:
+                    assistant_reply += chunk
+                    with placeholder.container():
+                        render_markdown_seguro(assistant_reply)
+        except Exception as e:
+            assistant_reply = f"Erro ao gerar resposta: {e}"
+            placeholder.error(assistant_reply)
 
-        for chunk in response.iter_content(chunk_size=1, decode_unicode=True):
-            if chunk:
-                bot_msg += chunk
-                st.session_state.chat_history[stream_index]["streaming"] = bot_msg
-                chat_area.markdown(render_chat(st.session_state.chat_history), unsafe_allow_html=True)
-
-        st.session_state.chat_history[stream_index]["content"] = bot_msg
-
-    except Exception as e:
-        st.session_state.chat_history.append({"role": "bot", "content": f"Erro: {e}"})
-
-    st.rerun()
+    st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})
 
 # Rodapé
 st.markdown("""
-<div class="footer">
-    Sofia IA é um projeto experimental. Dúvidas ou sugestões? Fale com a equipe responsável.
+<div style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 2rem;">
+    Assistente IA é um projeto experimental. Dúvidas ou sugestões? Fale com a equipe responsável.
 </div>
 """, unsafe_allow_html=True)
