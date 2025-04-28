@@ -31,8 +31,8 @@ def chat():
 
     def generate():
         llm_max_tokens = int(os.getenv("LLM_MAX_TOKENS", 4096))
-        llm_temperature = int(os.getenv("LLM_TEMPERATURE", 0.8))
-        llm_top_p = int(os.getenv("LLM_TOP_P", 0.95))
+        llm_temperature = float(os.getenv("LLM_TEMPERATURE", 0.8))
+        llm_top_p = float(os.getenv("LLM_TOP_P", 0.95))
         start = time.time()
         try:
             for chunk in llm.create_completion(
