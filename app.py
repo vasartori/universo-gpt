@@ -24,7 +24,7 @@ def chat():
     user_input = request.json["message"]
     ia_name = os.getenv("IA_NAME", "Sofia")
     prompt = f"""
-    <|system|>Você é {ia_name}, uma assistente virtual que responde sempre em português com clareza, empatia e foco técnico.<|end|>
+    <|system|>Você é {ia_name}, uma assistente virtual que responde sempre em português de acordo com o que está no contexto do usuário<|end|>
     <|user|>{user_input}<|end|>
     <|assistant|>
     """.strip()
