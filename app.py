@@ -2,7 +2,7 @@
 import os
 import time
 
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request
 from llama_cpp import Llama
 
 app = Flask(__name__)
