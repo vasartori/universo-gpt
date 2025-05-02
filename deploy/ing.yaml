@@ -9,12 +9,12 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: sarta-gpt.tm7cf70.staging.k8s.sp05.te.tks.sh
+  - host: universo-gpt.lab.int
     http:
       paths:
       - backend:
           service:
-            name: sarta-gpt
+            name: universo-gpt
             port:
               number: 5000
         path: /
